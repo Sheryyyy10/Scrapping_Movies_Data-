@@ -1,6 +1,8 @@
 # Scrapping_Movies_Data-
 This project is a Python-based web scraping tool designed to extract movie data from various websites such as IMDb, Rotten Tomatoes, The Movie Database (TMDb), and Metacritic. It provides a convenient way to gather information about movie titles, ratings, cast members, release dates and plot summaries for analysis or integration other applications.
 
+The Movie Data Scraper is a versatile Python-based web scraping tool designed to extract comprehensive details about movies from various websites. It provides users with a convenient way to gather information such as movie titles, actors, ratings, release dates, plot summaries, and more from multiple sources including IMDb, Rotten Tomatoes, and The Movie Database (TMDb).
+
 # Why use the Movie Data Scraper?
 
 Comprehensive Data Collection: The Movie Data Scraper allows users to gather movie data from multiple websites in one place. This saves time and effort compared to manually visiting each website to collect information.
