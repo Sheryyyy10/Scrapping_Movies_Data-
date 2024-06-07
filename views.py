@@ -89,6 +89,7 @@ def rotten(request):
         movie_name = request.GET['movie_name']
         sess = HTMLSession()
         url = f"https://www.rottentomatoes.com/search?search={movie_name.replace(' ', '_')}"
+        print(url)
         response = sess.get(url)
 
         # Extracting the first search result URL
@@ -293,6 +294,7 @@ def rotten(request):
                 movies_data = None
 
             rotten_data = {
+                "rotten_url" : url,
                 "rating": rating,
                 "revenue": revenue,
                 "producer": producer,
@@ -343,12 +345,19 @@ class scrape_main(APIView):
             global country, language, genre, cast, synopsis, trailer, language_instance, country_instance
 
             try:
+                movie_name = request.GET.get('movie_name', '')
+                trakt_url = f'https://trakt.tv/search/?query={movie_name}'
+
                 with ThreadPoolExecutor(max_workers=5) as executor:
                     rotten_rating = executor.submit(rotten, request)
                     rotten_data = rotten_rating.result()
 
-                movie_name = request.GET.get('movie_name', '')
-                trakt_url = f'https://trakt.tv/search/?query={movie_name}'
+                rotten_url = rotten_data['rotten_url']
+
+                # Check if the movie already exists in the database
+                movie_data = self.check_movie_in_db(trakt_url, rotten_url)
+                if movie_data:
+                    return JsonResponse(movie_data, safe=False, content_type="application/json")
 
                 with HTMLSession() as sess:
                     response = sess.get(trakt_url)
@@ -419,6 +428,8 @@ class scrape_main(APIView):
                         data = {
                             'name': name,
                             'release_year': release,
+                            'rotten_url': rotten_data['rotten_url'],
+                            'trakt_url': trakt_url,
                             'imdb_rating': rating,
                             'trailer': trailer_link,
                             'poster': poster,
@@ -463,6 +474,41 @@ class scrape_main(APIView):
             except Exception as e:
                 print(f"An error occurred: {e}")
                 return JsonResponse({"error": f"An error occurred: {e}"}, status=500)
+
+    def check_movie_in_db(self, trakt_url, rotten_url):
+        try:
+            app_data = AppData.objects.get(trakt_url=trakt_url, rotten_url=rotten_url)
+            return {
+                'name': app_data.name,
+                'release_year': app_data.release_year,
+                'rotten_url': app_data.rotten_url,
+                'trakt_url': app_data.trakt_url,
+                'imdb_rating': app_data.imdb_rating,
+                'trailer': app_data.trailer,
+                'poster': app_data.poster,
+                'rotten_rating': app_data.rotten_rating,
+                'audience': app_data.audience,
+                'language': app_data.language.name,
+                'duration': app_data.duration,
+                'status_released': app_data.status_released,
+                'season_movie': app_data.season_movie,
+                'casts': app_data.casts,
+                'reviews': app_data.reviews,
+                'country': app_data.country.name,
+                'genre': app_data.genre,
+                "where_to_watch": app_data.where_to_watch,
+                'approval_status': app_data.approval_status,
+                'film_studio': app_data.film_studio,
+                'approx_budget': app_data.approx_budget,
+                'synopsis': app_data.synopsis,
+                'news_and_guides': app_data.news_and_guides,
+                'more_like_this': app_data.more_like_this,
+                "revenue": app_data.revenue,
+                "producer": app_data.producer,
+                "photos": app_data.photos,
+            }
+        except AppData.DoesNotExist:
+            return None
 
     @staticmethod
     def extract_text(response, selector):
